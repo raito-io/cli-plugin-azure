@@ -16,7 +16,7 @@ type DataSourceSyncer struct {
 }
 
 func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
-	stAccnts, err := getStorageAccounts(ctx, configMap.GetStringWithDefault(global.AzSubscriptionId, ""))
+	stAccnts, err := getStorageAccounts(ctx, configMap.GetStringWithDefault(global.AzSubscriptionId, ""), configMap.Parameters)
 
 	if err != nil {
 		return err
@@ -35,6 +35,9 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 
 		for _, accnt := range v {
 			storageAccount := fmt.Sprintf("%s/%s", resourceGroup, accnt)
+
+			logger.Info(fmt.Sprintf("Processing storage account %s", accnt))
+
 			dataSourceHandler.AddDataObjects(&ds.DataObject{
 				ExternalId:       storageAccount,
 				Name:             accnt,
@@ -44,7 +47,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 				ParentExternalId: resourceGroup,
 			})
 
-			client, err := createAZBlobClient(accnt)
+			client, err := createAZBlobClient(ctx, accnt, configMap.Parameters)
 
 			if err != nil {
 				return err
@@ -59,6 +62,9 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 
 				for _, v := range page.ContainerItems {
 					storageContainer := fmt.Sprintf("%s/%s", storageAccount, *v.Name)
+
+					logger.Info(fmt.Sprintf("Processing container %s", storageContainer))
+
 					dataSourceHandler.AddDataObjects(&ds.DataObject{
 						ExternalId:       storageContainer,
 						Name:             *v.Name,
@@ -67,8 +73,6 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 						Description:      fmt.Sprintf("Azure Storage Container %s", *v.Name),
 						ParentExternalId: storageAccount,
 					})
-
-					logger.Error(fmt.Sprintf("%s\n\n", *v.Name))
 
 					pager2 := client.NewListBlobsFlatPager(*v.Name, nil)
 

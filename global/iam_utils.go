@@ -14,7 +14,7 @@ import (
 
 var identityContainer *ad.IdentityContainer
 
-func createArmauthorizationClientFactory(ctx context.Context, params map[string]string) (*armauthorization.ClientFactory, error) {
+func CreateADClientSecretCredential(ctx context.Context, params map[string]string) (*azidentity.ClientSecretCredential, error) {
 	secret := params[ad.AdSecret]
 
 	if secret == "" {
@@ -34,7 +34,12 @@ func createArmauthorizationClientFactory(ctx context.Context, params map[string]
 	}
 
 	// Initializing the client credential
-	cred, err := azidentity.NewClientSecretCredential(tenantId, clientId, secret, nil)
+	return azidentity.NewClientSecretCredential(tenantId, clientId, secret, nil)
+}
+
+func createArmauthorizationClientFactory(ctx context.Context, params map[string]string) (*armauthorization.ClientFactory, error) {
+	cred, err := CreateADClientSecretCredential(ctx, params)
+
 	if err != nil {
 		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
 	}

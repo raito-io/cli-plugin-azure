@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
 	"github.com/hashicorp/go-hclog"
+	"github.com/raito-io/cli-plugin-azure/global"
 	"github.com/raito-io/cli/base"
 )
 
@@ -18,9 +18,13 @@ func init() {
 	logger = base.Logger()
 }
 
-func createAZBlobClient(storageAccount string) (*azblob.Client, error) {
+func createAZBlobClient(ctx context.Context, storageAccount string, params map[string]string) (*azblob.Client, error) {
 	// create a credential for authenticating with Azure Active Directory
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
+	cred, err := global.CreateADClientSecretCredential(ctx, params)
+
+	if err != nil {
+		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
+	}
 
 	if err != nil {
 		return nil, err
@@ -30,12 +34,11 @@ func createAZBlobClient(storageAccount string) (*azblob.Client, error) {
 	return azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net/", storageAccount), cred, nil)
 }
 
-func getStorageAccounts(ctx context.Context, subscription string) (map[string][]string, error) {
-	// create a credential for authenticating with Azure Active Directory
-	cred, err := azidentity.NewDefaultAzureCredential(nil)
+func getStorageAccounts(ctx context.Context, subscription string, params map[string]string) (map[string][]string, error) {
+	cred, err := global.CreateADClientSecretCredential(ctx, params)
 
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
 	}
 
 	clientFactory, err := armstorage.NewClientFactory(subscription, cred, nil)

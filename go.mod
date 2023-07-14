@@ -2,15 +2,13 @@ module github.com/raito-io/cli-plugin-azure
 
 go 1.18
 
-replace github.com/raito-io/cli-plugin-azure-ad => ../cli-plugin-azure-ad
-
 require (
 	github.com/Azure/azure-sdk-for-go/sdk/azidentity v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.3.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.0.0
 	github.com/hashicorp/go-hclog v1.5.0
 	github.com/raito-io/cli v0.42.0
-	github.com/raito-io/cli-plugin-azure-ad v0.2.1
+	github.com/raito-io/cli-plugin-azure-ad v0.3.0
 	github.com/vektra/mockery/v2 v2.27.1
 )
 

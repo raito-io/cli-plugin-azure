@@ -83,15 +83,20 @@ func GetRoleAssignments(ctx context.Context, params map[string]string) ([]IAMRol
 		return nil, err
 	}
 
-	identityContainer, err := ad.NewIdentityStoreSyncer().GetIdentityContainer(ctx, params)
+	if identityContainer == nil {
+		c, err2 := ad.NewIdentityStoreSyncer().GetIdentityContainer(ctx, params)
 
-	if err != nil {
-		return nil, err
+		if err2 != nil {
+			return nil, err2
+		}
+
+		identityContainer = c
 	}
 
 	pager := client.NewListForScopePager("/subscriptions/"+params[AzSubscriptionId], nil)
 
 	assignments := make([]IAMRoleAssignment, 0)
+
 	for pager.More() {
 		page, err2 := pager.NextPage(ctx)
 		if err2 != nil {
@@ -110,7 +115,7 @@ func GetRoleAssignments(ctx context.Context, params map[string]string) ([]IAMRol
 			}
 
 			assignments = append(assignments, IAMRoleAssignment{
-				PrincipalId:      getPrincipalNameById(ctx, identityContainer, *v.Properties.PrincipalType, *v.Properties.PrincipalID),
+				PrincipalId:      getPrincipalNameById(identityContainer, *v.Properties.PrincipalType, *v.Properties.PrincipalID),
 				PrincipalType:    *v.Properties.PrincipalType,
 				RoleName:         roleDefIdToRoleNameMap[*v.Properties.RoleDefinitionID],
 				RoleDefinitionID: *v.Properties.RoleDefinitionID,
@@ -153,7 +158,7 @@ func GetRoleIdByName(ctx context.Context, params map[string]string, roleName str
 	return &id, nil
 }
 
-func getPrincipalNameById(ctx context.Context, ic *ad.IdentityContainer, principalType armauthorization.PrincipalType, id string) string {
+func getPrincipalNameById(ic *ad.IdentityContainer, principalType armauthorization.PrincipalType, id string) string {
 	if principalType == armauthorization.PrincipalTypeGroup {
 		for _, group := range ic.Groups {
 			if group.ExternalId == id {
@@ -167,10 +172,11 @@ func getPrincipalNameById(ctx context.Context, ic *ad.IdentityContainer, princip
 			}
 		}
 	}
+
 	return ""
 }
 
-func getPrincipalIdByName(ctx context.Context, ic *ad.IdentityContainer, principalType armauthorization.PrincipalType, name string) string {
+func getPrincipalIdByName(ic *ad.IdentityContainer, principalType armauthorization.PrincipalType, name string) string {
 	if principalType == armauthorization.PrincipalTypeGroup {
 		for _, group := range ic.Groups {
 			if group.Name == name {
@@ -184,6 +190,7 @@ func getPrincipalIdByName(ctx context.Context, ic *ad.IdentityContainer, princip
 			}
 		}
 	}
+
 	return ""
 }
 
@@ -198,7 +205,7 @@ func GetPrincipalIdByName(ctx context.Context, params map[string]string, princip
 		identityContainer = c
 	}
 
-	return getPrincipalIdByName(ctx, identityContainer, principalType, name)
+	return getPrincipalIdByName(identityContainer, principalType, name)
 }
 
 func CreateRoleAssignment(ctx context.Context, params map[string]string, binding IAMRoleAssignment) error {

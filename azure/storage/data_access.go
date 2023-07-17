@@ -21,12 +21,14 @@ type DataAccessSyncer struct {
 
 func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, iamRoleAssignments []global.IAMRoleAssignment, accessProviderHandler wrappers.AccessProviderHandler, configMap *config.ConfigMap) error {
 	apMap := make(map[string]*sync_from_target.AccessProvider)
+
 	for _, assignment := range iamRoleAssignments {
 		if assignment.PrincipalType != armauthorization.PrincipalTypeGroup && assignment.PrincipalType != armauthorization.PrincipalTypeUser {
 			continue
 		}
 
 		raitoManaged := false
+
 		for _, rm := range a.raitoManagedBindings {
 			if rm.PrincipalId == assignment.PrincipalId && rm.Scope == assignment.Scope && rm.RoleDefinitionID == assignment.RoleDefinitionID {
 				raitoManaged = true
@@ -43,6 +45,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 
 		doType := ""
 		doFullname := ""
+
 		if len(scopeSplit) == 3 {
 			apName = fmt.Sprintf("subscription-%s", strings.ReplaceAll(assignment.RoleName, " ", "-"))
 			doType = "datasource"
@@ -84,14 +87,11 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 			}
 		}
 
-		switch assignment.PrincipalType {
-		case armauthorization.PrincipalTypeGroup:
+		if assignment.PrincipalType == armauthorization.PrincipalTypeGroup {
 			apMap[apName].Who.Groups = append(apMap[apName].Who.Groups, assignment.PrincipalId)
-
-		case armauthorization.PrincipalTypeUser:
+		} else if assignment.PrincipalType == armauthorization.PrincipalTypeUser {
 			apMap[apName].Who.Users = append(apMap[apName].Who.Users, assignment.PrincipalId)
 		}
-
 	}
 
 	for _, v := range apMap {
@@ -106,9 +106,6 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 func (a *DataAccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessProviders *importer.AccessProviderImport, accessProviderFeedbackHandler wrappers.AccessProviderFeedbackHandler, configMap *config.ConfigMap) error {
 	for _, ap := range accessProviders.AccessProviders {
 		bindings_to_add, bindings_to_remove := convertAccessProviderToIamRoleAssignments(ctx, ap, configMap.Parameters)
-
-		logger.Error(fmt.Sprintf("ADD %+v\n\n", bindings_to_add))
-		logger.Error(fmt.Sprintf("REM %+v\n\n", bindings_to_remove))
 
 		for _, b := range bindings_to_remove {
 			err := global.DeleteRoleAssignment(ctx, configMap.Parameters, b)
@@ -128,10 +125,14 @@ func (a *DataAccessSyncer) SyncAccessProviderToTarget(ctx context.Context, acces
 			}
 		}
 
-		accessProviderFeedbackHandler.AddAccessProviderFeedback(ap.Id, importer.AccessSyncFeedbackInformation{
+		err := accessProviderFeedbackHandler.AddAccessProviderFeedback(ap.Id, importer.AccessSyncFeedbackInformation{
 			AccessId:   ap.Id,
 			ActualName: ap.NamingHint,
 		})
+
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -143,9 +144,10 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 
 	bindings := make([][]global.IAMRoleAssignment, 2)
 
-	for i, _ := range bindings {
+	for i := range bindings {
 		bindings[i] = make([]global.IAMRoleAssignment, 0)
 		whatList := accessProvider.What
+
 		if i == 1 {
 			whatList = accessProvider.DeleteWhat
 		}
@@ -153,6 +155,7 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 		for _, what := range whatList {
 			scope := ""
 			fullNameParts := strings.Split(what.DataObject.FullName, "/")
+
 			switch what.DataObject.Type {
 			case "resourcegroup":
 				if len(fullNameParts) < 2 {
@@ -212,7 +215,6 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 					})
 				}
 			}
-
 		}
 	}
 

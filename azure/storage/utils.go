@@ -49,6 +49,7 @@ func getStorageAccounts(ctx context.Context, subscription string, params map[str
 
 	subscriptions := make(map[string][]string, 0)
 	pager := clientFactory.NewAccountsClient().NewListPager(nil)
+
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {

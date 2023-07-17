@@ -24,7 +24,8 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 
 	for k, v := range stAccnts {
 		resourceGroup := fmt.Sprintf("%s/%s", configMap.GetStringWithDefault(global.AzSubscriptionId, ""), k)
-		dataSourceHandler.AddDataObjects(&ds.DataObject{
+
+		err := dataSourceHandler.AddDataObjects(&ds.DataObject{
 			ExternalId:       resourceGroup,
 			Name:             k,
 			FullName:         resourceGroup,
@@ -33,12 +34,16 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 			ParentExternalId: "",
 		})
 
+		if err != nil {
+			return err
+		}
+
 		for _, accnt := range v {
 			storageAccount := fmt.Sprintf("%s/%s", resourceGroup, accnt)
 
 			logger.Info(fmt.Sprintf("Processing storage account %s", accnt))
 
-			dataSourceHandler.AddDataObjects(&ds.DataObject{
+			err2 := dataSourceHandler.AddDataObjects(&ds.DataObject{
 				ExternalId:       storageAccount,
 				Name:             accnt,
 				FullName:         storageAccount,
@@ -46,6 +51,10 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 				Description:      fmt.Sprintf("Azure Storage Account %s", accnt),
 				ParentExternalId: resourceGroup,
 			})
+
+			if err2 != nil {
+				return err2
+			}
 
 			client, err := createAZBlobClient(ctx, accnt, configMap.Parameters)
 
@@ -65,7 +74,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 
 					logger.Info(fmt.Sprintf("Processing container %s", storageContainer))
 
-					dataSourceHandler.AddDataObjects(&ds.DataObject{
+					err3 := dataSourceHandler.AddDataObjects(&ds.DataObject{
 						ExternalId:       storageContainer,
 						Name:             *v.Name,
 						FullName:         storageContainer,
@@ -73,6 +82,10 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 						Description:      fmt.Sprintf("Azure Storage Container %s", *v.Name),
 						ParentExternalId: storageAccount,
 					})
+
+					if err3 != nil {
+						return err3
+					}
 
 					pager2 := client.NewListBlobsFlatPager(*v.Name, nil)
 
@@ -100,7 +113,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 								doType = "folder"
 							}
 
-							dataSourceHandler.AddDataObjects(&ds.DataObject{
+							err4 := dataSourceHandler.AddDataObjects(&ds.DataObject{
 								ExternalId:       fullName,
 								Name:             name,
 								FullName:         fullName,
@@ -108,6 +121,10 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 								Description:      fmt.Sprintf("Azure Storage %s %s", doType, fullName),
 								ParentExternalId: parentExternalId,
 							})
+
+							if err4 != nil {
+								return err4
+							}
 						}
 					}
 				}

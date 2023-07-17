@@ -6,7 +6,7 @@
 </h1>
 
 <h4 align="center">
-  Azure Active Directory plugin for the Raito CLI
+  Azure plugin for the Raito CLI
 </h4>
 
 <p align="center">

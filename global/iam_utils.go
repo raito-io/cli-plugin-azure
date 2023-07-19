@@ -208,6 +208,20 @@ func GetPrincipalIdByName(ctx context.Context, params map[string]string, princip
 	return getPrincipalIdByName(identityContainer, principalType, name)
 }
 
+func GetPrincipalNameById(ctx context.Context, params map[string]string, principalType armauthorization.PrincipalType, id string) string {
+	if identityContainer == nil {
+		c, err := ad.NewIdentityStoreSyncer().GetIdentityContainer(ctx, params)
+
+		if err != nil {
+			return ""
+		}
+
+		identityContainer = c
+	}
+
+	return getPrincipalNameById(identityContainer, principalType, id)
+}
+
 func CreateRoleAssignment(ctx context.Context, params map[string]string, binding IAMRoleAssignment) error {
 	client, err := createRoleAssignmentClient(ctx, params)
 
@@ -225,6 +239,8 @@ func CreateRoleAssignment(ctx context.Context, params map[string]string, binding
 
 	if err != nil && strings.Contains(err.Error(), "already exists") {
 		return nil
+	} else if err != nil {
+		logger.Error(err.Error())
 	}
 
 	return err
@@ -247,11 +263,12 @@ func DeleteRoleAssignment(ctx context.Context, params map[string]string, binding
 
 		for _, v := range page.Value {
 			if *v.Properties.PrincipalID == binding.PrincipalId && *v.Properties.RoleDefinitionID == binding.RoleDefinitionID {
-				logger.Error("found the binding")
-
 				_, err3 := client.Delete(ctx, binding.Scope, *v.Name, nil)
 
-				return err3
+				if err3 != nil {
+					logger.Error(err3.Error())
+					return err3
+				}
 			}
 		}
 	}

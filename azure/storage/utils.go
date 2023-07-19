@@ -26,10 +26,6 @@ func createAZBlobClient(ctx context.Context, storageAccount string, params map[s
 		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
 	}
 
-	if err != nil {
-		return nil, err
-	}
-
 	// create an azblob.Client for the specified storage account that uses the above credential
 	return azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net/", storageAccount), cred, nil)
 }

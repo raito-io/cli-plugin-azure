@@ -107,7 +107,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 								parentExternalId = strings.Join(fsplit[0:len(fsplit)-1], "/")
 							}
 
-							doType := "blob"
+							doType := "file"
 
 							if strings.EqualFold(*v2.Properties.ContentType, "application/octet-stream") {
 								doType = "folder"
@@ -155,19 +155,37 @@ func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []
 			Name:        "container",
 			Type:        "container",
 			Permissions: s.GetIAMPermissions(),
-			Children:    []string{"folder", "object"},
+			Children:    []string{"folder", "file"},
 		},
 		{
 			Name:        "folder",
 			Type:        "folder",
 			Permissions: []*ds.DataObjectTypePermission{},
-			Children:    []string{"folder", "blob"},
+			Children:    []string{"folder", "file"},
 		},
 		{
-			Name:        "blob",
-			Type:        "blob",
+			Name:        "file",
+			Type:        "file",
 			Permissions: []*ds.DataObjectTypePermission{},
-			Children:    []string{},
+			Actions: []*ds.DataObjectTypeAction{
+				{
+					Action:        "GetBlob",
+					GlobalActions: []string{ds.Read},
+				},
+				{
+					Action:        "PutBlob",
+					GlobalActions: []string{ds.Write},
+				},
+				{
+					Action:        "DeleteBlob",
+					GlobalActions: []string{ds.Write},
+				},
+				{
+					Action:        "DeleteBlob",
+					GlobalActions: []string{ds.Write},
+				},
+			},
+			Children: []string{},
 		},
 	}
 }
@@ -192,16 +210,19 @@ func (s *DataSourceSyncer) GetIAMPermissions() []*ds.DataObjectTypePermission {
 		{
 			Permission:             "Storage Blob Data Owner",
 			Description:            "Provides full access to Azure Storage blob containers and data, including assigning POSIX access control.",
+			GlobalPermissions:      []string{ds.Admin},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write, ds.Admin},
 		},
 		{
 			Permission:             "Storage Blob Data Contributor",
 			Description:            "Read, write, and delete Azure Storage containers and blobs.",
+			GlobalPermissions:      []string{ds.Write},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
 		},
 		{
 			Permission:             "Storage Blob Data Reader",
 			Description:            "Read and list Azure Storage containers and blobs.",
+			GlobalPermissions:      []string{ds.Read},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
 		},
 	}

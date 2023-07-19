@@ -49,7 +49,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 		if len(scopeSplit) == 3 {
 			apName = fmt.Sprintf("subscription-%s", strings.ReplaceAll(assignment.RoleName, " ", "-"))
 			doType = "datasource"
-			doFullname = "BigQueryDataSource" // still need to figure this out?!
+			doFullname = "AZDataSource" // still need to figure out how to get the DS is from config
 		} else {
 			doType = strings.ToLower(scopeSplit[len(scopeSplit)-2])
 			doType = doType[0 : len(doType)-1]

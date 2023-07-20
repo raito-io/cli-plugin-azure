@@ -22,6 +22,19 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 		return err
 	}
 
+	err = dataSourceHandler.AddDataObjects(&ds.DataObject{
+		ExternalId:       configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
+		Name:             fmt.Sprintf("subscription-%s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
+		FullName:         configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
+		Type:             "subscription",
+		Description:      fmt.Sprintf("Azure subscription %s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
+		ParentExternalId: "",
+	})
+
+	if err != nil {
+		return err
+	}
+
 	for k, v := range stAccnts {
 		resourceGroup := fmt.Sprintf("%s/%s", configMap.GetStringWithDefault(global.AzSubscriptionId, ""), k)
 
@@ -31,7 +44,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 			FullName:         resourceGroup,
 			Type:             "resourcegroup",
 			Description:      fmt.Sprintf("Azure Resource group %s", k),
-			ParentExternalId: "",
+			ParentExternalId: configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
 		})
 
 		if err != nil {
@@ -138,7 +151,13 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []*ds.DataObjectType) {
 	logger.Debug("Returning meta data for Azure Storage data source")
 
-	return []string{"resourcegroup"}, []*ds.DataObjectType{
+	return []string{"subscription"}, []*ds.DataObjectType{
+		{
+			Name:        "subscription",
+			Type:        "subscription",
+			Permissions: s.GetIAMPermissions(),
+			Children:    []string{"resourcegroup"},
+		},
 		{
 			Name:        "resourcegroup",
 			Type:        "resourcegroup",
@@ -188,6 +207,10 @@ func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []
 			Children: []string{},
 		},
 	}
+}
+
+func (s *DataSourceSyncer) GetDataSourceIAMPermissions() []*ds.DataObjectTypePermission {
+	return []*ds.DataObjectTypePermission{}
 }
 
 func (s *DataSourceSyncer) GetIAMPermissions() []*ds.DataObjectTypePermission {

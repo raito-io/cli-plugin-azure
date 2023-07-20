@@ -48,8 +48,8 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 
 		if len(scopeSplit) == 3 {
 			apName = fmt.Sprintf("subscription-%s", strings.ReplaceAll(assignment.RoleName, " ", "-"))
-			doType = "datasource"
-			doFullname = "AZDataSource" // still need to figure out how to get the DS is from config
+			doType = "subscription"
+			doFullname = configMap.GetStringWithDefault(global.AzSubscriptionId, "")
 		} else {
 			doType = strings.ToLower(scopeSplit[len(scopeSplit)-2])
 			doType = doType[0 : len(doType)-1]

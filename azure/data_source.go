@@ -13,7 +13,7 @@ import (
 type AzureServiceDataObjectSyncer interface {
 	SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error
 	GetDataObjectTypes(ctx context.Context) ([]string, []*ds.DataObjectType)
-	GetIAMPermissions() []*ds.DataObjectTypePermission
+	GetDataSourceIAMPermissions() []*ds.DataObjectTypePermission
 }
 
 type DataSourceSyncer struct {
@@ -61,7 +61,7 @@ func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context) (*ds.MetaD
 
 		meta.DataObjectTypes[0].Children = append(meta.DataObjectTypes[0].Children, topLevelDoTypeNames...)
 
-		meta.DataObjectTypes[0].Permissions = append(meta.DataObjectTypes[0].Permissions, syncer.GetIAMPermissions()...)
+		meta.DataObjectTypes[0].Permissions = append(meta.DataObjectTypes[0].Permissions, syncer.GetDataSourceIAMPermissions()...)
 	}
 
 	return meta, nil

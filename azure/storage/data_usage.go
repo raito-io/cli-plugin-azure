@@ -47,7 +47,7 @@ func (s *DataUsageSyncer) SyncDataUsage(ctx context.Context, startDate time.Time
 			for _, rt := range entries {
 				accessedResource := sync_from_target.WhatItem{
 					DataObject: &data_source.DataObjectReference{
-						FullName: strings.Join(strings.Split(rt.ObjectKey, "/")[2:], "/"),
+						FullName: fmt.Sprintf("%s/%s/%s/%s", configParams.GetString(global.AzSubscriptionId), resourceGroup, storageAccount, strings.Join(strings.Split(rt.ObjectKey, "/")[2:], "/")),
 						Type:     "file",
 					},
 					Permissions: []string{rt.OperationName},

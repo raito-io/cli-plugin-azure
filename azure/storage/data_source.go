@@ -112,7 +112,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 							split := strings.Split(*v2.Name, "/")
 							name := split[len(split)-1]
 
-							fullName := fmt.Sprintf("%s/%s", *v.Name, *v2.Name)
+							fullName := fmt.Sprintf("%s/%s/%s", storageAccount, *v.Name, *v2.Name)
 							parentExternalId := storageContainer
 
 							if len(split) > 1 {
@@ -120,10 +120,11 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 								parentExternalId = strings.Join(fsplit[0:len(fsplit)-1], "/")
 							}
 
-							doType := "file"
+							doType := "folder"
 
-							if strings.EqualFold(*v2.Properties.ContentType, "application/octet-stream") {
-								doType = "folder"
+							// this is a temp solution to differentiate files and folders
+							if v2.Properties.ContentMD5 != nil && string(v2.Properties.ContentMD5) != "" {
+								doType = "file"
 							}
 
 							err4 := dataSourceHandler.AddDataObjects(&ds.DataObject{

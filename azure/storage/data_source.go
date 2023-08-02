@@ -18,7 +18,7 @@ type DataSourceSyncer struct {
 func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
 	stAccnts, err := getStorageAccounts(ctx, configMap.GetStringWithDefault(global.AzSubscriptionId, ""), configMap.Parameters)
 
-	if err != nil {
+	if handleError(err) != nil {
 		return err
 	}
 
@@ -78,8 +78,8 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 			pager := client.NewListContainersPager(nil)
 			for pager.More() {
 				page, err := pager.NextPage(ctx)
-				if err != nil {
-					return err
+				if handleError(err) != nil {
+					break
 				}
 
 				for _, v := range page.ContainerItems {
@@ -104,8 +104,8 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 
 					for pager2.More() {
 						page2, err2 := pager2.NextPage(ctx)
-						if err2 != nil {
-							return err2
+						if handleError(err2) != nil {
+							break
 						}
 
 						for _, v2 := range page2.Segment.BlobItems {
@@ -266,4 +266,11 @@ func (s *DataSourceSyncer) IsApplicablePermission(ctx context.Context, resourceT
 	}
 
 	return false
+}
+
+func handleError(e error) error {
+	if e != nil && strings.Contains(e.Error(), "403") {
+		logger.Warn(fmt.Sprintf("Encountered authorization error during sync, this could indicate a lack of permissions for the App registration: %s", e.Error()))
+	}
+	return e
 }

@@ -156,37 +156,37 @@ func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []
 		{
 			Name:        "subscription",
 			Type:        "subscription",
-			Permissions: s.GetIAMPermissions(),
+			Permissions: s.GetIAMPermissions(true),
 			Children:    []string{"resourcegroup"},
 		},
 		{
 			Name:        "resourcegroup",
 			Type:        "resourcegroup",
-			Permissions: s.GetIAMPermissions(),
+			Permissions: s.GetIAMPermissions(true),
 			Children:    []string{"storageaccount"},
 		},
 		{
 			Name:        "storageaccount",
 			Type:        "storageaccount",
-			Permissions: s.GetIAMPermissions(),
+			Permissions: s.GetIAMPermissions(true),
 			Children:    []string{"container"},
 		},
 		{
 			Name:        "container",
 			Type:        "container",
-			Permissions: s.GetIAMPermissions(),
+			Permissions: s.GetIAMPermissions(true),
 			Children:    []string{"folder", "file"},
 		},
 		{
 			Name:        "folder",
 			Type:        "folder",
-			Permissions: []*ds.DataObjectTypePermission{},
+			Permissions: s.GetIAMPermissions(false),
 			Children:    []string{"folder", "file"},
 		},
 		{
 			Name:        "file",
 			Type:        "file",
-			Permissions: []*ds.DataObjectTypePermission{},
+			Permissions: s.GetIAMPermissions(false),
 			Actions: []*ds.DataObjectTypeAction{
 				{
 					Action:        "GetBlob",
@@ -214,40 +214,46 @@ func (s *DataSourceSyncer) GetDataSourceIAMPermissions() []*ds.DataObjectTypePer
 	return []*ds.DataObjectTypePermission{}
 }
 
-func (s *DataSourceSyncer) GetIAMPermissions() []*ds.DataObjectTypePermission {
+func (s *DataSourceSyncer) GetIAMPermissions(canBeGranted bool) []*ds.DataObjectTypePermission {
 	return []*ds.DataObjectTypePermission{
 		{
 			Permission:             "Owner",
 			Description:            "Grants full access to manage all resources, including the ability to assign roles in Azure RBAC.",
 			UsageGlobalPermissions: []string{ds.Read, ds.Write, ds.Admin},
+			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Contributor",
 			Description:            "Grants full access to manage all resources, but does not allow you to assign roles in Azure RBAC, manage assignments in Azure Blueprints, or share image galleries.",
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
+			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Reader",
 			Description:            "View all resources, but does not allow you to make any changes.",
 			UsageGlobalPermissions: []string{ds.Read},
+			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Owner",
 			Description:            "Provides full access to Azure Storage blob containers and data, including assigning POSIX access control.",
 			GlobalPermissions:      []string{ds.Admin},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write, ds.Admin},
+			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Contributor",
 			Description:            "Read, write, and delete Azure Storage containers and blobs.",
 			GlobalPermissions:      []string{ds.Write},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
+			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Reader",
 			Description:            "Read and list Azure Storage containers and blobs.",
 			GlobalPermissions:      []string{ds.Read},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
+			CannotBeGranted:        !canBeGranted,
 		},
 	}
 }

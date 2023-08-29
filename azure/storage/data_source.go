@@ -180,13 +180,13 @@ func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []
 		{
 			Name:        "folder",
 			Type:        "folder",
-			Permissions: []*ds.DataObjectTypePermission{},
+			Permissions: s.GetIAMPermissions(),
 			Children:    []string{"folder", "file"},
 		},
 		{
 			Name:        "file",
 			Type:        "file",
-			Permissions: []*ds.DataObjectTypePermission{},
+			Permissions: s.GetIAMPermissions(),
 			Actions: []*ds.DataObjectTypeAction{
 				{
 					Action:        "GetBlob",

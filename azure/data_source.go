@@ -52,6 +52,15 @@ func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context) (*ds.MetaD
 				Children:    []string{},
 			},
 		},
+		UsageMetaInfo: &ds.UsageMetaInput{
+			DefaultLevel: ds.File,
+			Levels: []*ds.UsageMetaInputDetail{
+				{
+					Name:            ds.File,
+					DataObjectTypes: []string{ds.File},
+				},
+			},
+		},
 	}
 
 	for _, syncer := range s.serviceSyncers {

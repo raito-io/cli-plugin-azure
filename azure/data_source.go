@@ -3,8 +3,9 @@ package azure
 import (
 	"context"
 
-	"github.com/raito-io/cli-plugin-azure/azure/storage"
 	ds "github.com/raito-io/cli/base/data_source"
+
+	"github.com/raito-io/cli-plugin-azure/azure/storage"
 
 	"github.com/raito-io/cli/base/util/config"
 	"github.com/raito-io/cli/base/wrappers"
@@ -42,8 +43,9 @@ func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context) (*ds.MetaD
 	logger.Debug("Returning meta data for Azure data source")
 
 	meta := &ds.MetaData{
-		Type:              "azure",
-		SupportedFeatures: []string{},
+		Type:                  "azure",
+		SupportedFeatures:     []string{},
+		SupportsApInheritance: false,
 		DataObjectTypes: []*ds.DataObjectType{
 			{
 				Name:        ds.Datasource,
@@ -59,6 +61,15 @@ func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context) (*ds.MetaD
 					Name:            ds.File,
 					DataObjectTypes: []string{ds.File},
 				},
+			},
+		},
+		AccessProviderTypes: []*ds.AccessProviderType{
+			{
+				Type:          storage.RoleAssignments,
+				Label:         "Role Assignment",
+				IsNamedEntity: false,
+				CanBeCreated:  true,
+				CanBeAssumed:  false,
 			},
 		},
 	}

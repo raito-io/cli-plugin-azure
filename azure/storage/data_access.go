@@ -6,9 +6,11 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
-	"github.com/raito-io/cli-plugin-azure/global"
+	"github.com/aws/smithy-go/ptr"
 	"github.com/raito-io/cli/base/data_source"
 	"github.com/raito-io/cli/base/wrappers"
+
+	"github.com/raito-io/cli-plugin-azure/global"
 
 	"github.com/raito-io/cli/base/access_provider/sync_from_target"
 	importer "github.com/raito-io/cli/base/access_provider/sync_to_target"
@@ -60,11 +62,14 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 			doFullname = strings.Replace(doFullname, "resourcegroups", "", 1)
 			doFullname = strings.Replace(doFullname, "storageAccounts", "", 1)
 			doFullname = strings.Replace(doFullname, "storageaccounts", "", 1)
+			doFullname = strings.Replace(doFullname, "blobServices/default/containers", "", 1)
 			doFullname = strings.Replace(doFullname, "containers", "", 1)
 			doFullname = strings.Replace(doFullname, "//", "/", -1)
 
 			apName = fmt.Sprintf("%s-%s-%s", doType, scopeSplit[len(scopeSplit)-1], strings.ReplaceAll(assignment.RoleName, " ", "-"))
 		}
+
+		logger.Debug(fmt.Sprintf("Rewrite scope: %q to doFullName: %q", assignment.Scope, doFullname))
 
 		if _, f := apMap[apName]; !f {
 			apMap[apName] = &sync_from_target.AccessProvider{
@@ -73,6 +78,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 				NamingHint: apName,
 				ActualName: apName,
 				Action:     sync_from_target.Grant,
+				Type:       ptr.String(RoleAssignments),
 				Who: &sync_from_target.WhoItem{
 					Users:  []string{},
 					Groups: []string{},
@@ -157,6 +163,8 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 			fullNameParts := strings.Split(what.DataObject.FullName, "/")
 
 			switch what.DataObject.Type {
+			case "subscription":
+				scope = fmt.Sprintf("/subscriptions/%s", fullNameParts[0])
 			case "resourcegroup":
 				if len(fullNameParts) < 2 {
 					break
@@ -171,7 +179,7 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 				if len(fullNameParts) < 4 {
 					break
 				}
-				scope = fmt.Sprintf("/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Storage/storageAccounts/%s/containers/%s", fullNameParts[0], fullNameParts[1], fullNameParts[2], fullNameParts[3])
+				scope = fmt.Sprintf("/subscriptions/%s/resourcegroups/%s/providers/Microsoft.Storage/storageAccounts/%s/blobServices/default/containers/%s", fullNameParts[0], fullNameParts[1], fullNameParts[2], fullNameParts[3])
 			}
 
 			if scope == "" {
@@ -195,7 +203,7 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 					continue
 				}
 
-				for _, u := range append(accessProvider.Who.Users, accessProvider.Who.UsersInherited...) {
+				for _, u := range accessProvider.Who.Users {
 					bindings[i] = append(bindings[i], global.IAMRoleAssignment{
 						Scope:            scope,
 						RoleName:         permission,

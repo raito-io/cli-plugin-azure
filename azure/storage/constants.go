@@ -1,3 +1,6 @@
 package storage
 
-const AzApiNamespace = "Microsoft.Storage"
+const (
+	AzApiNamespace  = "Microsoft.Storage"
+	RoleAssignments = "roleAssignments"
+)

@@ -7,9 +7,10 @@ import (
 
 	ds "github.com/raito-io/cli/base/data_source"
 
-	"github.com/raito-io/cli-plugin-azure/global"
 	"github.com/raito-io/cli/base/util/config"
 	"github.com/raito-io/cli/base/wrappers"
+
+	"github.com/raito-io/cli-plugin-azure/global"
 )
 
 type DataSourceSyncer struct {

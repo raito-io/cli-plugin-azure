@@ -163,6 +163,8 @@ func convertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvid
 			fullNameParts := strings.Split(what.DataObject.FullName, "/")
 
 			switch what.DataObject.Type {
+			case "datasource":
+				scope = "/"
 			case "subscription":
 				scope = fmt.Sprintf("/subscriptions/%s", fullNameParts[0])
 			case "resourcegroup":

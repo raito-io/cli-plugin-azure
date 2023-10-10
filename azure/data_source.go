@@ -39,7 +39,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 	return nil
 }
 
-func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context) (*ds.MetaData, error) {
+func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context, _ *config.ConfigMap) (*ds.MetaData, error) {
 	logger.Debug("Returning meta data for Azure data source")
 
 	meta := &ds.MetaData{

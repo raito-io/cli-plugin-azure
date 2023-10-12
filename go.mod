@@ -12,8 +12,9 @@ require (
 	github.com/aws/smithy-go v1.15.0
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-hclog v1.5.0
-	github.com/raito-io/cli v0.50.0
+	github.com/raito-io/cli v0.52.0-dev0
 	github.com/raito-io/cli-plugin-azure-ad v0.4.0
+	github.com/raito-io/golang-set v0.0.4
 	github.com/stretchr/testify v1.8.4
 	github.com/vektra/mockery/v2 v2.35.3
 )

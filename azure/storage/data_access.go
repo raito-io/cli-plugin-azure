@@ -10,6 +10,7 @@ import (
 	"github.com/raito-io/cli/base/data_source"
 	"github.com/raito-io/cli/base/wrappers"
 
+	"github.com/raito-io/cli-plugin-azure/azure/constants"
 	"github.com/raito-io/cli-plugin-azure/global"
 
 	"github.com/raito-io/cli/base/access_provider/sync_from_target"
@@ -18,10 +19,9 @@ import (
 )
 
 type DataAccessSyncer struct {
-	raitoManagedBindings []global.IAMRoleAssignment
 }
 
-func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, iamRoleAssignments []global.IAMRoleAssignment, accessProviderHandler wrappers.AccessProviderHandler, configMap *config.ConfigMap) error {
+func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, raitoManagedBindings []global.IAMRoleAssignment, iamRoleAssignments []global.IAMRoleAssignment, accessProviderHandler wrappers.AccessProviderHandler, configMap *config.ConfigMap) error {
 	apMap := make(map[string]*sync_from_target.AccessProvider)
 
 	for _, assignment := range iamRoleAssignments {
@@ -31,7 +31,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 
 		raitoManaged := false
 
-		for _, rm := range a.raitoManagedBindings {
+		for _, rm := range raitoManagedBindings {
 			if rm.PrincipalId == assignment.PrincipalId && rm.Scope == assignment.Scope && rm.RoleDefinitionID == assignment.RoleDefinitionID {
 				raitoManaged = true
 			}
@@ -78,7 +78,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 				NamingHint: apName,
 				ActualName: apName,
 				Action:     sync_from_target.Grant,
-				Type:       ptr.String(RoleAssignments),
+				Type:       ptr.String(constants.RoleAssignments),
 				Who: &sync_from_target.WhoItem{
 					Users:  []string{},
 					Groups: []string{},
@@ -109,39 +109,11 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, ia
 
 	return nil
 }
-func (a *DataAccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessProviders *importer.AccessProviderImport, accessProviderFeedbackHandler wrappers.AccessProviderFeedbackHandler, configMap *config.ConfigMap) error {
-	for _, ap := range accessProviders.AccessProviders {
-		bindings_to_add, bindings_to_remove := convertAccessProviderToIamRoleAssignments(ctx, ap, configMap.Parameters)
 
-		for _, b := range bindings_to_remove {
-			err := global.DeleteRoleAssignment(ctx, configMap.Parameters, b)
+func (a *DataAccessSyncer) ConvertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvider *importer.AccessProvider, configMap *config.ConfigMap) ([]global.IAMRoleAssignment, []global.IAMRoleAssignment, error) {
+	bindings_to_add, bindings_to_remove := convertAccessProviderToIamRoleAssignments(ctx, accessProvider, configMap.Parameters)
 
-			if err != nil {
-				return err
-			}
-		}
-
-		for _, b := range bindings_to_add {
-			a.raitoManagedBindings = append(a.raitoManagedBindings, b)
-
-			err := global.CreateRoleAssignment(ctx, configMap.Parameters, b)
-
-			if err != nil {
-				return err
-			}
-		}
-
-		err := accessProviderFeedbackHandler.AddAccessProviderFeedback(ap.Id, importer.AccessSyncFeedbackInformation{
-			AccessId:   ap.Id,
-			ActualName: ap.NamingHint,
-		})
-
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return bindings_to_add, bindings_to_remove, nil
 }
 
 // return value 1: bindings to create, 2: bindings to delete

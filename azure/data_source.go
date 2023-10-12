@@ -5,6 +5,7 @@ import (
 
 	ds "github.com/raito-io/cli/base/data_source"
 
+	"github.com/raito-io/cli-plugin-azure/azure/constants"
 	"github.com/raito-io/cli-plugin-azure/azure/storage"
 
 	"github.com/raito-io/cli/base/util/config"
@@ -65,7 +66,7 @@ func (s *DataSourceSyncer) GetDataSourceMetaData(ctx context.Context, _ *config.
 		},
 		AccessProviderTypes: []*ds.AccessProviderType{
 			{
-				Type:          storage.RoleAssignments,
+				Type:          constants.RoleAssignments,
 				Label:         "Role Assignment",
 				IsNamedEntity: false,
 				CanBeCreated:  true,

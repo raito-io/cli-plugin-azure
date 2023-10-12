@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/aws/smithy-go/ptr"
+	"github.com/hashicorp/go-multierror"
 	"github.com/raito-io/cli/base/wrappers"
 	"github.com/raito-io/golang-set/set"
 
@@ -102,7 +103,16 @@ func (a *AccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessPro
 		}
 	}
 
-	return nil
+	var err error
+
+	for _, feedbackObject := range feedbackObjects {
+		feedbackErr := accessProviderFeedbackHandler.AddAccessProviderFeedback(feedbackObject)
+		if feedbackErr != nil {
+			err = multierror.Append(err, feedbackErr)
+		}
+	}
+
+	return err
 }
 
 func handleRoleAssignmentError(bindingApMap map[global.IAMRoleAssignment][]string, feedbackObjects map[string]importer.AccessProviderSyncFeedback, binding global.IAMRoleAssignment, err error) {

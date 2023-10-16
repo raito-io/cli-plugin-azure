@@ -6,28 +6,18 @@ import (
 	"strings"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage"
-	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake/directory"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake/service"
 	"github.com/hashicorp/go-hclog"
-	"github.com/raito-io/cli-plugin-azure/global"
 	"github.com/raito-io/cli/base"
+
+	"github.com/raito-io/cli-plugin-azure/global"
 )
 
 var logger hclog.Logger
 
 func init() {
 	logger = base.Logger()
-}
-
-func createAZBlobClient(ctx context.Context, storageAccount string, params map[string]string) (*azblob.Client, error) {
-	// create a credential for authenticating with Azure Active Directory
-	cred, err := global.CreateADClientSecretCredential(ctx, params)
-
-	if err != nil {
-		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
-	}
-
-	// create an azblob.Client for the specified storage account that uses the above credential
-	return azblob.NewClient(fmt.Sprintf("https://%s.blob.core.windows.net/", storageAccount), cred, nil)
 }
 
 func getStorageAccounts(ctx context.Context, subscription string, params map[string]string) (map[string][]string, error) {
@@ -64,4 +54,26 @@ func getStorageAccounts(ctx context.Context, subscription string, params map[str
 	}
 
 	return subscriptions, nil
+}
+
+func createDataLakeServiceClient(ctx context.Context, accountName string, params map[string]string) (*service.Client, error) {
+	cred, err := global.CreateADClientSecretCredential(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
+	}
+
+	serviceURL := fmt.Sprintf("https://%s.dfs.core.windows.net/", accountName)
+
+	return service.NewClient(serviceURL, cred, nil)
+}
+
+func createDirectoryClient(ctx context.Context, accountName string, fileSystem string, path string, params map[string]string) (*directory.Client, error) {
+	cred, err := global.CreateADClientSecretCredential(ctx, params)
+	if err != nil {
+		return nil, fmt.Errorf("could not create a credential from a secret: %w", err)
+	}
+
+	serviceURL := fmt.Sprintf("https://%s.dfs.core.windows.net/%s/%s", accountName, fileSystem, path)
+
+	return directory.NewClient(serviceURL, cred, nil)
 }

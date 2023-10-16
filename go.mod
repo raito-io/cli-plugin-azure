@@ -9,11 +9,14 @@ require (
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/monitor/armmonitor v0.10.1
 	github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.4.0
 	github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.1.0
+	github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake v0.1.0-beta.1
 	github.com/aws/smithy-go v1.15.0
 	github.com/google/uuid v1.3.1
 	github.com/hashicorp/go-hclog v1.5.0
+	github.com/hashicorp/go-multierror v1.1.1
 	github.com/raito-io/cli v0.52.0-dev0
 	github.com/raito-io/cli-plugin-azure-ad v0.4.0
+	github.com/raito-io/enumer v0.1.1
 	github.com/raito-io/golang-set v0.0.4
 	github.com/stretchr/testify v1.8.4
 	github.com/vektra/mockery/v2 v2.35.3
@@ -44,7 +47,6 @@ require (
 	github.com/golang-jwt/jwt/v5 v5.0.0 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
-	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-plugin v1.5.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
@@ -62,6 +64,7 @@ require (
 	github.com/mitchellh/go-testing-interface v1.14.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/oklog/run v1.1.0 // indirect
+	github.com/pascaldekloe/name v1.0.1 // indirect
 	github.com/pelletier/go-toml/v2 v2.1.0 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect

@@ -56,6 +56,8 @@ github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.4.0 
 github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/storage/armstorage v1.4.0/go.mod h1:ZU9DiYactg7wOCuFWHM57mhIuudyXIVdcM+3uZP6kS0=
 github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.1.0 h1:nVocQV40OQne5613EeLayJiRAJuKlBGy+m22qWG+WRg=
 github.com/Azure/azure-sdk-for-go/sdk/storage/azblob v1.1.0/go.mod h1:7QJP7dr2wznCMeqIrhMgWGf7XpAQnVrJqDm9nvV3Cu4=
+github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake v0.1.0-beta.1 h1:JfniP1EfZ5zV3gweEs5qSXTIA7m8xzAyoVUZ/5ehHk0=
+github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake v0.1.0-beta.1/go.mod h1:LOiiRCZKY9OlgPDmDrdM8uiL63lwSe01M0hklP3/4xc=
 github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1 h1:WpB/QDNLpMw72xHJc34BNNykqSOeEJDAWkhf0u12/Jk=
 github.com/AzureAD/microsoft-authentication-library-for-go v1.1.1/go.mod h1:wP83P5OoQ5p6ip3ScPr0BAq0BvuPAvacpEuSzyouqAI=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -294,6 +296,8 @@ github.com/modern-go/reflect2 v1.0.2 h1:xBagoLtFs94CBntxluKeaWgTMpvLxC4ur3nMaC9G
 github.com/modern-go/reflect2 v1.0.2/go.mod h1:yWuevngMOJpCy52FWWMvUC8ws7m/LJsjYzDa0/r8luk=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
+github.com/pascaldekloe/name v1.0.1 h1:9lnXOHeqeHHnWLbKfH6X98+4+ETVqFqxN09UXSjcMb0=
+github.com/pascaldekloe/name v1.0.1/go.mod h1:Z//MfYJnH4jVpQ9wkclwu2I2MkHmXTlT9wR5UZScttM=
 github.com/pelletier/go-toml/v2 v2.1.0 h1:FnwAJ4oYMvbT/34k9zzHuZNrhlz48GB3/s6at6/MHO4=
 github.com/pelletier/go-toml/v2 v2.1.0/go.mod h1:tJU2Z3ZkXwnxa4DPO899bsyIoywizdUvyaeZurnPPDc=
 github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 h1:KoWmjvw+nsYOo29YJK9vDA65RGE3NrOnUtO7a+RF9HU=
@@ -308,6 +312,8 @@ github.com/raito-io/cli v0.52.0-dev0 h1:utpHDLvWtPzwGWRWWUuRJHJDj8x8mHCnlJWyX3W6
 github.com/raito-io/cli v0.52.0-dev0/go.mod h1:lb23EFNoSK7y4uYzBfeUOOY7LnP4aXeU5SvmOVWqwYA=
 github.com/raito-io/cli-plugin-azure-ad v0.4.0 h1:6qTsZFQGuHooOP43DOfl85kbxVfRManuqnycxo+lm6w=
 github.com/raito-io/cli-plugin-azure-ad v0.4.0/go.mod h1:fjfzXZGw8xb1NNV+LqYKfbGtn9suKtSlhvK5mhPzMzA=
+github.com/raito-io/enumer v0.1.1 h1:eKBslhfIAggXxGonXXIemRjpgQGaWNgCn1ualcymZvY=
+github.com/raito-io/enumer v0.1.1/go.mod h1:/BEVH50em6aZr5wy7wzuIJ667Uengz47lQjg8X62Jfo=
 github.com/raito-io/golang-set v0.0.4 h1:7zk8r1TCE/F9JOOgseIXYx7oZJdC9/j5uivkCYjnCg0=
 github.com/raito-io/golang-set v0.0.4/go.mod h1:ktKACNnQeSpzo0Nes6jDTs74UOau8psJpAesatiEKQE=
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=

@@ -6,7 +6,6 @@ import (
 	"github.com/aws/smithy-go/ptr"
 	"github.com/hashicorp/go-multierror"
 	"github.com/raito-io/cli/base/wrappers"
-	"github.com/raito-io/golang-set/set"
 
 	"github.com/raito-io/cli-plugin-azure/azure/constants"
 	"github.com/raito-io/cli-plugin-azure/azure/storage"
@@ -18,7 +17,35 @@ import (
 
 type AzureServiceDataAccessSyncer interface {
 	SyncAccessProvidersFromTarget(ctx context.Context, raitoManagedBindings []global.IAMRoleAssignment, iamRoleAssignments []global.IAMRoleAssignment, accessProviderHandler wrappers.AccessProviderHandler, configMap *config.ConfigMap) error
-	ConvertAccessProviderToIamRoleAssignments(ctx context.Context, accessProvider *importer.AccessProvider, configMap *config.ConfigMap) (bindings_to_add []global.IAMRoleAssignment, bindings_to_remove []global.IAMRoleAssignment, err error)
+	SyncAccessProvidersToTarget(ctx context.Context, accessProviders []*importer.AccessProvider, feedbackHandler global.AccessProviderFeedbackHandler, configMap *config.ConfigMap) error
+}
+
+var _ global.AccessProviderFeedbackHandler = (*apFeedbackHandler)(nil)
+
+type apFeedbackHandler struct {
+	feedbackObjects map[string]importer.AccessProviderSyncFeedback
+}
+
+func newApFeedbackHandler() *apFeedbackHandler {
+	return &apFeedbackHandler{
+		feedbackObjects: make(map[string]importer.AccessProviderSyncFeedback),
+	}
+}
+
+func (a apFeedbackHandler) Error(err string, apIds ...string) {
+	for _, apId := range apIds {
+		if ap, found := a.feedbackObjects[apId]; found {
+			ap.Errors = append(ap.Errors, err)
+		}
+	}
+}
+
+func (a apFeedbackHandler) Warning(warning string, apIds ...string) {
+	for _, apId := range apIds {
+		if ap, found := a.feedbackObjects[apId]; found {
+			ap.Warnings = append(ap.Warnings, warning)
+		}
+	}
 }
 
 type AccessSyncer struct {
@@ -50,12 +77,8 @@ func (a *AccessSyncer) SyncAccessProvidersFromTarget(ctx context.Context, access
 
 	return nil
 }
-func (a *AccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessProviders *importer.AccessProviderImport, accessProviderFeedbackHandler wrappers.AccessProviderFeedbackHandler, configMap *config.ConfigMap) error {
-	bindingsToAdd := set.NewSet[global.IAMRoleAssignment]()
-	bindingsToRemove := set.NewSet[global.IAMRoleAssignment]()
-	bindingApMap := map[global.IAMRoleAssignment][]string{}
-
-	feedbackObjects := make(map[string]importer.AccessProviderSyncFeedback)
+func (a *AccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessProviders *importer.AccessProviderImport, accessProviderFeedbackHandler wrappers.AccessProviderFeedbackHandler, configMap *config.ConfigMap) (err error) {
+	feedbackObjects := newApFeedbackHandler()
 
 	for _, ap := range accessProviders.AccessProviders {
 		fo := importer.AccessProviderSyncFeedback{
@@ -64,63 +87,26 @@ func (a *AccessSyncer) SyncAccessProviderToTarget(ctx context.Context, accessPro
 			Type:           ptr.String(constants.RoleAssignments),
 		}
 
-		for _, syncer := range a.serviceSyncers {
-			apSyncerBindingsToAdd, apSyncerBindingsToRemove, err := syncer.ConvertAccessProviderToIamRoleAssignments(ctx, ap, configMap)
-			if err != nil {
-				fo.Errors = append(fo.Errors, err.Error())
-			}
-
-			bindingsToAdd.Add(apSyncerBindingsToAdd...)
-			bindingsToRemove.Add(apSyncerBindingsToRemove...)
-
-			for _, binding := range apSyncerBindingsToAdd {
-				bindingApMap[binding] = append(bindingApMap[binding], ap.Id)
-			}
-
-			for _, binding := range apSyncerBindingsToRemove {
-				bindingApMap[binding] = append(bindingApMap[binding], ap.Id)
-			}
-		}
-
-		feedbackObjects[ap.Id] = fo
+		feedbackObjects.feedbackObjects[ap.Id] = fo
 	}
 
-	bindingsToRemove.RemoveAll(bindingsToAdd.Slice()...)
+	defer func() {
+		for _, feedbackObject := range feedbackObjects.feedbackObjects {
+			fErr := accessProviderFeedbackHandler.AddAccessProviderFeedback(feedbackObject)
+			if fErr != nil {
+				err = multierror.Append(err, fErr)
+			}
+		}
+	}()
 
-	for binding := range bindingsToRemove {
-		err := global.DeleteRoleAssignment(ctx, configMap.Parameters, binding)
+	for _, syncer := range a.serviceSyncers {
+		err := syncer.SyncAccessProvidersToTarget(ctx, accessProviders.AccessProviders, feedbackObjects, configMap)
 		if err != nil {
-			handleRoleAssignmentError(bindingApMap, feedbackObjects, binding, err)
+			return err
 		}
 	}
 
-	for binding := range bindingsToAdd {
-		a.raitoManagedBindings = append(a.raitoManagedBindings, binding)
-
-		err := global.CreateRoleAssignment(ctx, configMap.Parameters, binding)
-		if err != nil {
-			handleRoleAssignmentError(bindingApMap, feedbackObjects, binding, err)
-		}
-	}
-
-	var err error
-
-	for _, feedbackObject := range feedbackObjects {
-		feedbackErr := accessProviderFeedbackHandler.AddAccessProviderFeedback(feedbackObject)
-		if feedbackErr != nil {
-			err = multierror.Append(err, feedbackErr)
-		}
-	}
-
-	return err
-}
-
-func handleRoleAssignmentError(bindingApMap map[global.IAMRoleAssignment][]string, feedbackObjects map[string]importer.AccessProviderSyncFeedback, binding global.IAMRoleAssignment, err error) {
-	for _, apId := range bindingApMap[binding] {
-		fo := feedbackObjects[apId]
-		fo.Errors = append(fo.Errors, err.Error())
-		feedbackObjects[apId] = fo
-	}
+	return nil
 }
 
 func (a *AccessSyncer) SyncAccessAsCodeToTarget(ctx context.Context, accessProviders *importer.AccessProviderImport, prefix string, configMap *config.ConfigMap) error {

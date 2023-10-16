@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake/filesystem"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake/service"
+	"github.com/aws/smithy-go/ptr"
 	ds "github.com/raito-io/cli/base/data_source"
 
 	"github.com/raito-io/cli/base/util/config"
@@ -43,7 +46,7 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 			ExternalId:       resourceGroup,
 			Name:             k,
 			FullName:         resourceGroup,
-			Type:             "resourcegroup",
+			Type:             ResourceGroup,
 			Description:      fmt.Sprintf("Azure Resource group %s", k),
 			ParentExternalId: configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
 		})
@@ -53,96 +56,10 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 		}
 
 		for _, accnt := range v {
-			storageAccount := fmt.Sprintf("%s/%s", resourceGroup, accnt)
-
-			logger.Info(fmt.Sprintf("Processing storage account %s", accnt))
-
-			err2 := dataSourceHandler.AddDataObjects(&ds.DataObject{
-				ExternalId:       storageAccount,
-				Name:             accnt,
-				FullName:         storageAccount,
-				Type:             "storageaccount",
-				Description:      fmt.Sprintf("Azure Storage Account %s", accnt),
-				ParentExternalId: resourceGroup,
-			})
-
+			err2 := s.syncStorageAccount(ctx, resourceGroup, accnt, dataSourceHandler, configMap)
 			if err2 != nil {
+				logger.Warn(fmt.Sprintf("Failed to sync storage account '%s/%s': %s", resourceGroup, accnt, err2.Error()))
 				return err2
-			}
-
-			client, err := createAZBlobClient(ctx, accnt, configMap.Parameters)
-
-			if err != nil {
-				return err
-			}
-
-			pager := client.NewListContainersPager(nil)
-			for pager.More() {
-				page, err := pager.NextPage(ctx)
-				if handleError(err) != nil {
-					break
-				}
-
-				for _, v := range page.ContainerItems {
-					storageContainer := fmt.Sprintf("%s/%s", storageAccount, *v.Name)
-
-					logger.Info(fmt.Sprintf("Processing container %s", storageContainer))
-
-					err3 := dataSourceHandler.AddDataObjects(&ds.DataObject{
-						ExternalId:       storageContainer,
-						Name:             *v.Name,
-						FullName:         storageContainer,
-						Type:             "container",
-						Description:      fmt.Sprintf("Azure Storage Container %s", *v.Name),
-						ParentExternalId: storageAccount,
-					})
-
-					if err3 != nil {
-						return err3
-					}
-
-					pager2 := client.NewListBlobsFlatPager(*v.Name, nil)
-
-					for pager2.More() {
-						page2, err2 := pager2.NextPage(ctx)
-						if handleError(err2) != nil {
-							break
-						}
-
-						for _, v2 := range page2.Segment.BlobItems {
-							split := strings.Split(*v2.Name, "/")
-							name := split[len(split)-1]
-
-							fullName := fmt.Sprintf("%s/%s/%s", storageAccount, *v.Name, *v2.Name)
-							parentExternalId := storageContainer
-
-							if len(split) > 1 {
-								fsplit := strings.Split(fullName, "/")
-								parentExternalId = strings.Join(fsplit[0:len(fsplit)-1], "/")
-							}
-
-							doType := "folder"
-
-							// this is a temp solution to differentiate files and folders
-							if v2.Properties.ContentMD5 != nil && len(v2.Properties.ContentMD5) != 0 {
-								doType = "file"
-							}
-
-							err4 := dataSourceHandler.AddDataObjects(&ds.DataObject{
-								ExternalId:       fullName,
-								Name:             name,
-								FullName:         fullName,
-								Type:             doType,
-								Description:      fmt.Sprintf("Azure Storage %s %s", doType, fullName),
-								ParentExternalId: parentExternalId,
-							})
-
-							if err4 != nil {
-								return err4
-							}
-						}
-					}
-				}
 			}
 		}
 	}
@@ -150,44 +67,164 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 	return nil
 }
 
-func (s *DataSourceSyncer) GetDataObjectTypes(ctx context.Context) ([]string, []*ds.DataObjectType) {
+func (s *DataSourceSyncer) syncStorageAccount(ctx context.Context, parent string, accountName string, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
+	logger.Info(fmt.Sprintf("Processing storage account %s", accountName))
+	storageAccount := fmt.Sprintf("%s/%s", parent, accountName)
+
+	err2 := dataSourceHandler.AddDataObjects(&ds.DataObject{
+		ExternalId:       storageAccount,
+		Name:             accountName,
+		FullName:         storageAccount,
+		Type:             "storageaccount",
+		Description:      fmt.Sprintf("Azure Storage Account %s", accountName),
+		ParentExternalId: parent,
+	})
+
+	if err2 != nil {
+		return err2
+	}
+
+	client, err := createDataLakeServiceClient(ctx, accountName, configMap.Parameters)
+	if err != nil {
+		return err
+	}
+
+	pager := client.NewListFileSystemsPager(&service.ListFileSystemsOptions{Include: service.ListFileSystemsInclude{Deleted: ptr.Bool(false)}})
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, fs := range page.ListFileSystemsSegmentResponse.FileSystemItems {
+			errFs := s.syncFileSystem(ctx, client, storageAccount, *fs.Name, dataSourceHandler)
+			if errFs != nil {
+				logger.Warn(fmt.Sprintf("Failed to sync file system '%s/%s': %s", storageAccount, *fs.Name, errFs.Error()))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *DataSourceSyncer) syncFileSystem(ctx context.Context, serviceClient *service.Client, parent string, fileSystem string, dataSourceHandler wrappers.DataSourceObjectHandler) error {
+	logger.Info(fmt.Sprintf("Processing container %s", fileSystem))
+	storageContainer := fmt.Sprintf("%s/%s", parent, fileSystem)
+
+	err := dataSourceHandler.AddDataObjects(&ds.DataObject{
+		ExternalId:       storageContainer,
+		Name:             fileSystem,
+		FullName:         storageContainer,
+		Type:             Container,
+		Description:      fmt.Sprintf("Azure Storage Container %s", fileSystem),
+		ParentExternalId: parent,
+	})
+	if err != nil {
+		return err
+	}
+
+	client := serviceClient.NewFileSystemClient(fileSystem)
+
+	pager := client.NewListPathsPager(true, nil)
+	for pager.More() {
+		page, err := pager.NextPage(ctx)
+		if err != nil {
+			return err
+		}
+
+		for _, path := range page.Paths {
+			errPath := s.syncContainerObject(storageContainer, path, dataSourceHandler)
+			if errPath != nil {
+				logger.Warn(fmt.Sprintf("Failed to sync object '%s/%s': %s", storageContainer, *path.Name, errPath.Error()))
+			}
+		}
+	}
+
+	return nil
+}
+
+func (s *DataSourceSyncer) syncContainerObject(containerName string, path *filesystem.Path, dataSourceHandler wrappers.DataSourceObjectHandler) error {
+	doType := File
+	if path.IsDirectory != nil && *path.IsDirectory {
+		doType = Folder
+	}
+
+	logger.Info(fmt.Sprintf("Processing container object %s %s", doType, *path.Name))
+	fullName := fmt.Sprintf("%s/%s", containerName, *path.Name)
+	fillNameSplit := strings.Split(fullName, "/")
+	parent := strings.Join(fillNameSplit[0:len(fillNameSplit)-1], "/")
+
+	err := dataSourceHandler.AddDataObjects(&ds.DataObject{
+		ExternalId:       fullName,
+		Name:             *path.Name,
+		FullName:         fullName,
+		Type:             doType,
+		Description:      fmt.Sprintf("Azure Storage %s %s", doType, *path.Name),
+		ParentExternalId: parent,
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *DataSourceSyncer) GetDataObjectTypes(_ context.Context) ([]string, []*ds.DataObjectType) {
 	logger.Debug("Returning meta data for Azure Storage data source")
 
 	return []string{"subscription"}, []*ds.DataObjectType{
 		{
-			Name:        "subscription",
-			Type:        "subscription",
-			Permissions: s.GetIAMPermissions(true),
-			Children:    []string{"resourcegroup"},
+			Name:        Subscription,
+			Type:        Subscription,
+			Permissions: s.GetIAMPermissions(),
+			Children:    []string{ResourceGroup},
 		},
 		{
-			Name:        "resourcegroup",
-			Type:        "resourcegroup",
-			Permissions: s.GetIAMPermissions(true),
-			Children:    []string{"storageaccount"},
+			Name:        ResourceGroup,
+			Type:        ResourceGroup,
+			Permissions: s.GetIAMPermissions(),
+			Children:    []string{StorageAccount},
 		},
 		{
-			Name:        "storageaccount",
-			Type:        "storageaccount",
-			Permissions: s.GetIAMPermissions(true),
+			Name:        StorageAccount,
+			Type:        StorageAccount,
+			Permissions: s.GetIAMPermissions(),
 			Children:    []string{"container"},
 		},
 		{
-			Name:        "container",
-			Type:        "container",
-			Permissions: s.GetIAMPermissions(true),
-			Children:    []string{"folder", "file"},
+			Name:        Container,
+			Type:        Container,
+			Permissions: s.GetIAMPermissions(),
+			Children:    []string{Folder, File},
 		},
 		{
-			Name:        "folder",
-			Type:        "folder",
-			Permissions: s.GetIAMPermissions(false),
-			Children:    []string{"folder", "file"},
+			Name: Folder,
+			Type: Folder,
+			Permissions: []*ds.DataObjectTypePermission{
+				{
+					Permission:             "Read",
+					Description:            "Read access to the folder",
+					GlobalPermissions:      []string{ds.Read},
+					UsageGlobalPermissions: []string{ds.Read},
+				},
+				{
+					Permission:             "Write",
+					Description:            "Write access to the folder",
+					GlobalPermissions:      []string{ds.Write},
+					UsageGlobalPermissions: []string{ds.Write},
+				},
+				{
+					Permission:        "Execute",
+					Description:       "Execute access to the folder",
+					GlobalPermissions: []string{ds.Read, ds.Write},
+				},
+			},
+			Children: []string{Folder, File},
 		},
 		{
-			Name:        "file",
-			Type:        "file",
-			Permissions: s.GetIAMPermissions(false),
+			Name:        File,
+			Type:        File,
+			Permissions: nil,
 			Actions: []*ds.DataObjectTypeAction{
 				{
 					Action:        "GetBlob",
@@ -215,46 +252,40 @@ func (s *DataSourceSyncer) GetDataSourceIAMPermissions() []*ds.DataObjectTypePer
 	return []*ds.DataObjectTypePermission{}
 }
 
-func (s *DataSourceSyncer) GetIAMPermissions(canBeGranted bool) []*ds.DataObjectTypePermission {
+func (s *DataSourceSyncer) GetIAMPermissions() []*ds.DataObjectTypePermission {
 	return []*ds.DataObjectTypePermission{
 		{
 			Permission:             "Owner",
 			Description:            "Grants full access to manage all resources, including the ability to assign roles in Azure RBAC.",
 			UsageGlobalPermissions: []string{ds.Read, ds.Write, ds.Admin},
-			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Contributor",
 			Description:            "Grants full access to manage all resources, but does not allow you to assign roles in Azure RBAC, manage assignments in Azure Blueprints, or share image galleries.",
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
-			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Reader",
 			Description:            "View all resources, but does not allow you to make any changes.",
 			UsageGlobalPermissions: []string{ds.Read},
-			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Owner",
 			Description:            "Provides full access to Azure Storage blob containers and data, including assigning POSIX access control.",
 			GlobalPermissions:      []string{ds.Admin},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write, ds.Admin},
-			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Contributor",
 			Description:            "Read, write, and delete Azure Storage containers and blobs.",
 			GlobalPermissions:      []string{ds.Write},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
-			CannotBeGranted:        !canBeGranted,
 		},
 		{
 			Permission:             "Storage Blob Data Reader",
 			Description:            "Read and list Azure Storage containers and blobs.",
 			GlobalPermissions:      []string{ds.Read},
 			UsageGlobalPermissions: []string{ds.Read, ds.Write},
-			CannotBeGranted:        !canBeGranted,
 		},
 	}
 }

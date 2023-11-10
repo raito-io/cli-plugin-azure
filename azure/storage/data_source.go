@@ -17,49 +17,59 @@ import (
 )
 
 type DataSourceSyncer struct {
+	config *ds.DataSourceSyncConfig
 }
 
-func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
+func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, config *ds.DataSourceSyncConfig) error {
+	s.config = config
+	configMap := config.GetConfigMap()
+
 	stAccnts, err := getStorageAccounts(ctx, configMap.GetStringWithDefault(global.AzSubscriptionId, ""), configMap.Parameters)
 
 	if handleError(err) != nil {
 		return err
 	}
 
-	err = dataSourceHandler.AddDataObjects(&ds.DataObject{
-		ExternalId:       configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
-		Name:             fmt.Sprintf("subscription-%s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
-		FullName:         configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
-		Type:             "subscription",
-		Description:      fmt.Sprintf("Azure subscription %s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
-		ParentExternalId: "",
-	})
-
-	if err != nil {
-		return err
-	}
-
-	for k, v := range stAccnts {
-		resourceGroup := fmt.Sprintf("%s/%s", configMap.GetStringWithDefault(global.AzSubscriptionId, ""), k)
-
-		err := dataSourceHandler.AddDataObjects(&ds.DataObject{
-			ExternalId:       resourceGroup,
-			Name:             k,
-			FullName:         resourceGroup,
-			Type:             ResourceGroup,
-			Description:      fmt.Sprintf("Azure Resource group %s", k),
-			ParentExternalId: configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
+	fullName := configMap.GetStringWithDefault(global.AzSubscriptionId, "")
+	if s.shouldHandle(fullName) {
+		err = dataSourceHandler.AddDataObjects(&ds.DataObject{
+			ExternalId:       fullName,
+			Name:             fmt.Sprintf("subscription-%s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
+			FullName:         fullName,
+			Type:             "subscription",
+			Description:      fmt.Sprintf("Azure subscription %s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
+			ParentExternalId: "",
 		})
 
 		if err != nil {
 			return err
 		}
+	}
 
-		for _, accnt := range v {
-			err2 := s.syncStorageAccount(ctx, resourceGroup, accnt, dataSourceHandler, configMap)
-			if err2 != nil {
-				logger.Warn(fmt.Sprintf("Failed to sync storage account '%s/%s': %s", resourceGroup, accnt, err2.Error()))
-				return err2
+	for k, v := range stAccnts {
+		resourceGroup := fmt.Sprintf("%s/%s", configMap.GetStringWithDefault(global.AzSubscriptionId, ""), k)
+		if s.shouldGoInto(resourceGroup) {
+			if s.shouldHandle(resourceGroup) {
+				err := dataSourceHandler.AddDataObjects(&ds.DataObject{
+					ExternalId:       resourceGroup,
+					Name:             k,
+					FullName:         resourceGroup,
+					Type:             ResourceGroup,
+					Description:      fmt.Sprintf("Azure Resource group %s", k),
+					ParentExternalId: configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
+				})
+
+				if err != nil {
+					return err
+				}
+			}
+
+			for _, accnt := range v {
+				err2 := s.syncStorageAccount(ctx, resourceGroup, accnt, dataSourceHandler, configMap)
+				if err2 != nil {
+					logger.Warn(fmt.Sprintf("Failed to sync storage account '%s/%s': %s", resourceGroup, accnt, err2.Error()))
+					return err2
+				}
 			}
 		}
 	}
@@ -68,20 +78,26 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 }
 
 func (s *DataSourceSyncer) syncStorageAccount(ctx context.Context, parent string, accountName string, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
-	logger.Info(fmt.Sprintf("Processing storage account %s", accountName))
 	storageAccount := fmt.Sprintf("%s/%s", parent, accountName)
+	if !s.shouldGoInto(storageAccount) {
+		return nil
+	}
 
-	err2 := dataSourceHandler.AddDataObjects(&ds.DataObject{
-		ExternalId:       storageAccount,
-		Name:             accountName,
-		FullName:         storageAccount,
-		Type:             "storageaccount",
-		Description:      fmt.Sprintf("Azure Storage Account %s", accountName),
-		ParentExternalId: parent,
-	})
+	logger.Info(fmt.Sprintf("Processing storage account %s", accountName))
 
-	if err2 != nil {
-		return err2
+	if s.shouldHandle(storageAccount) {
+		err2 := dataSourceHandler.AddDataObjects(&ds.DataObject{
+			ExternalId:       storageAccount,
+			Name:             accountName,
+			FullName:         storageAccount,
+			Type:             "storageaccount",
+			Description:      fmt.Sprintf("Azure Storage Account %s", accountName),
+			ParentExternalId: parent,
+		})
+
+		if err2 != nil {
+			return err2
+		}
 	}
 
 	client, err := createDataLakeServiceClient(ctx, accountName, configMap.Parameters)
@@ -108,24 +124,41 @@ func (s *DataSourceSyncer) syncStorageAccount(ctx context.Context, parent string
 }
 
 func (s *DataSourceSyncer) syncFileSystem(ctx context.Context, serviceClient *service.Client, parent string, fileSystem string, dataSourceHandler wrappers.DataSourceObjectHandler) error {
-	logger.Info(fmt.Sprintf("Processing container %s", fileSystem))
 	storageContainer := fmt.Sprintf("%s/%s", parent, fileSystem)
+	if !s.shouldGoInto(storageContainer) {
+		return nil
+	}
 
-	err := dataSourceHandler.AddDataObjects(&ds.DataObject{
-		ExternalId:       storageContainer,
-		Name:             fileSystem,
-		FullName:         storageContainer,
-		Type:             Container,
-		Description:      fmt.Sprintf("Azure Storage Container %s", fileSystem),
-		ParentExternalId: parent,
-	})
-	if err != nil {
-		return err
+	logger.Info(fmt.Sprintf("Processing container %s", fileSystem))
+
+	if s.shouldHandle(storageContainer) {
+		err := dataSourceHandler.AddDataObjects(&ds.DataObject{
+			ExternalId:       storageContainer,
+			Name:             fileSystem,
+			FullName:         storageContainer,
+			Type:             Container,
+			Description:      fmt.Sprintf("Azure Storage Container %s", fileSystem),
+			ParentExternalId: parent,
+		})
+		if err != nil {
+			return err
+		}
 	}
 
 	client := serviceClient.NewFileSystemClient(fileSystem)
 
-	pager := client.NewListPathsPager(true, nil)
+	var options *filesystem.ListPathsOptions
+
+	if s.config.DataObjectParent != "" {
+		prefix := s.config.DataObjectParent
+		prefix, f := strings.CutPrefix(prefix, storageContainer)
+
+		if f {
+			options = &filesystem.ListPathsOptions{Prefix: &prefix}
+		}
+	}
+
+	pager := client.NewListPathsPager(true, options)
 	for pager.More() {
 		page, err := pager.NextPage(ctx)
 		if err != nil {
@@ -144,19 +177,24 @@ func (s *DataSourceSyncer) syncFileSystem(ctx context.Context, serviceClient *se
 }
 
 func (s *DataSourceSyncer) syncContainerObject(containerName string, path *filesystem.Path, dataSourceHandler wrappers.DataSourceObjectHandler) error {
+	fullName := fmt.Sprintf("%s/%s", containerName, *path.Name)
+	if !s.shouldHandle(fullName) {
+		return nil
+	}
+
 	doType := File
 	if path.IsDirectory != nil && *path.IsDirectory {
 		doType = Folder
 	}
 
 	logger.Info(fmt.Sprintf("Processing container object %s %s", doType, *path.Name))
-	fullName := fmt.Sprintf("%s/%s", containerName, *path.Name)
 	fillNameSplit := strings.Split(fullName, "/")
 	parent := strings.Join(fillNameSplit[0:len(fillNameSplit)-1], "/")
+	name := fillNameSplit[len(fillNameSplit)-1]
 
 	err := dataSourceHandler.AddDataObjects(&ds.DataObject{
 		ExternalId:       fullName,
-		Name:             *path.Name,
+		Name:             name,
 		FullName:         fullName,
 		Type:             doType,
 		Description:      fmt.Sprintf("Azure Storage %s %s", doType, *path.Name),
@@ -312,4 +350,44 @@ func handleError(e error) error {
 	}
 
 	return e
+}
+
+// shouldHandle determines if this data object needs to be handled by the syncer or not. It does this by looking at the configuration options to only sync a part.
+func (s *DataSourceSyncer) shouldHandle(fullName string) (ret bool) {
+	defer func() {
+		logger.Debug(fmt.Sprintf("shouldHandle %s: %t", fullName, ret))
+	}()
+
+	// No partial sync specified, so do everything
+	if s.config.DataObjectParent == "" {
+		return true
+	}
+
+	// Check if the data object is under the data object to start from
+	if !strings.HasPrefix(fullName, s.config.DataObjectParent) || s.config.DataObjectParent == fullName {
+		return false
+	}
+
+	// Check if we hit any excludes
+	for _, exclude := range s.config.DataObjectExcludes {
+		if strings.HasPrefix(fullName, s.config.DataObjectParent+"/"+exclude) {
+			return false
+		}
+	}
+
+	return true
+}
+
+// shouldGoInto checks if we need to go deeper into this data object or not.
+func (s *DataSourceSyncer) shouldGoInto(fullName string) (ret bool) {
+	defer func() {
+		logger.Debug(fmt.Sprintf("shouldGoInto %s: %t", fullName, ret))
+	}()
+
+	// No partial sync specified, so do everything
+	if s.config.DataObjectParent == "" || strings.HasPrefix(s.config.DataObjectParent, fullName) || strings.HasPrefix(fullName, s.config.DataObjectParent) {
+		return true
+	}
+
+	return false
 }

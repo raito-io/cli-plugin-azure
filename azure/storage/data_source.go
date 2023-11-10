@@ -37,7 +37,6 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 			Name:             fmt.Sprintf("subscription-%s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
 			FullName:         fullName,
 			Type:             "subscription",
-			Description:      fmt.Sprintf("Azure subscription %s", configMap.GetStringWithDefault(global.AzSubscriptionId, "")),
 			ParentExternalId: "",
 		})
 
@@ -55,7 +54,6 @@ func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler
 					Name:             k,
 					FullName:         resourceGroup,
 					Type:             ResourceGroup,
-					Description:      fmt.Sprintf("Azure Resource group %s", k),
 					ParentExternalId: configMap.GetStringWithDefault(global.AzSubscriptionId, ""),
 				})
 
@@ -91,7 +89,6 @@ func (s *DataSourceSyncer) syncStorageAccount(ctx context.Context, parent string
 			Name:             accountName,
 			FullName:         storageAccount,
 			Type:             "storageaccount",
-			Description:      fmt.Sprintf("Azure Storage Account %s", accountName),
 			ParentExternalId: parent,
 		})
 
@@ -137,7 +134,6 @@ func (s *DataSourceSyncer) syncFileSystem(ctx context.Context, serviceClient *se
 			Name:             fileSystem,
 			FullName:         storageContainer,
 			Type:             Container,
-			Description:      fmt.Sprintf("Azure Storage Container %s", fileSystem),
 			ParentExternalId: parent,
 		})
 		if err != nil {
@@ -197,7 +193,6 @@ func (s *DataSourceSyncer) syncContainerObject(containerName string, path *files
 		Name:             name,
 		FullName:         fullName,
 		Type:             doType,
-		Description:      fmt.Sprintf("Azure Storage %s %s", doType, *path.Name),
 		ParentExternalId: parent,
 	})
 	if err != nil {

@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/raito-io/cli v0.56.3
-	github.com/raito-io/cli-plugin-azure-ad v0.2.0
+	github.com/raito-io/cli-plugin-azure-ad v0.4.1
 	github.com/raito-io/enumer v0.1.3
 	github.com/raito-io/golang-set v0.0.4
 	github.com/stretchr/testify v1.8.4
@@ -41,7 +41,7 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/ssooidc v1.21.7 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.26.7 // indirect
 	github.com/bcicen/jstream v1.0.1 // indirect
-	github.com/chigopher/pathlib v0.19.1 // indirect
+	github.com/chigopher/pathlib v1.0.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect

@@ -161,6 +161,8 @@ github.com/raito-io/cli-plugin-azure-ad v0.2.0 h1:2HJV5PRKnvAYHO7RxKzEWUS+Aem3HN
 github.com/raito-io/cli-plugin-azure-ad v0.2.0/go.mod h1:1dBusAb+21SCehduiiQ2ncXFX/uxSX2AGMQNR/k+ZFY=
 github.com/raito-io/cli-plugin-azure-ad v0.4.0 h1:6qTsZFQGuHooOP43DOfl85kbxVfRManuqnycxo+lm6w=
 github.com/raito-io/cli-plugin-azure-ad v0.4.0/go.mod h1:fjfzXZGw8xb1NNV+LqYKfbGtn9suKtSlhvK5mhPzMzA=
+github.com/raito-io/cli-plugin-azure-ad v0.4.1 h1:27QU+qH1fucXyAuKWwoCfmGUok3yvi2uwSBWR7Z7gmA=
+github.com/raito-io/cli-plugin-azure-ad v0.4.1/go.mod h1:DFnFjoCg+ddVjDoMqls+Fi1int2oIQfNCWzl/x0viNM=
 github.com/raito-io/enumer v0.1.3 h1:akwyfhO2BICdRPoRQLIOybjWd/9X2ga671r0cl/Rjw8=
 github.com/raito-io/enumer v0.1.3/go.mod h1:/BEVH50em6aZr5wy7wzuIJ667Uengz47lQjg8X62Jfo=
 github.com/raito-io/golang-set v0.0.4 h1:7zk8r1TCE/F9JOOgseIXYx7oZJdC9/j5uivkCYjnCg0=

@@ -13,7 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-hclog v1.6.2
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/raito-io/cli v0.56.3
+	github.com/raito-io/cli v0.57.0
 	github.com/raito-io/cli-plugin-azure-ad v0.4.2
 	github.com/raito-io/enumer v0.1.3
 	github.com/raito-io/golang-set v0.0.4

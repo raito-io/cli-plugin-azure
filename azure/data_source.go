@@ -13,7 +13,7 @@ import (
 )
 
 type AzureServiceDataObjectSyncer interface {
-	SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error
+	SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, config *ds.DataSourceSyncConfig) error
 	GetDataObjectTypes(ctx context.Context) ([]string, []*ds.DataObjectType)
 	GetDataSourceIAMPermissions() []*ds.DataObjectTypePermission
 }
@@ -28,9 +28,9 @@ func NewDataSourceSyncer() *DataSourceSyncer {
 	}}
 }
 
-func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *ds.DataSourceSyncConfig) error {
+func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, config *ds.DataSourceSyncConfig) error {
 	for _, syncer := range s.serviceSyncers {
-		err := syncer.SyncDataSource(ctx, dataSourceHandler, configMap.ConfigMap)
+		err := syncer.SyncDataSource(ctx, dataSourceHandler, config)
 
 		if err != nil {
 			return err

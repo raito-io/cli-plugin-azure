@@ -23,7 +23,7 @@
 # Raito CLI Plugin - Azure
 
 This Raito CLI plugin will synchronize the users and groups from an Azure Active Directory account to a specified Raito Identity Store. Next to that it supports syncing Data Objects and Access Providers for the following Azure Services:
-1. Azure Storage
+1. Azure Data Lake
 
 ## Prerequisites
 To use this plugin, you will need

@@ -28,9 +28,9 @@ func NewDataSourceSyncer() *DataSourceSyncer {
 	}}
 }
 
-func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *config.ConfigMap) error {
+func (s *DataSourceSyncer) SyncDataSource(ctx context.Context, dataSourceHandler wrappers.DataSourceObjectHandler, configMap *ds.DataSourceSyncConfig) error {
 	for _, syncer := range s.serviceSyncers {
-		err := syncer.SyncDataSource(ctx, dataSourceHandler, configMap)
+		err := syncer.SyncDataSource(ctx, dataSourceHandler, configMap.ConfigMap)
 
 		if err != nil {
 			return err

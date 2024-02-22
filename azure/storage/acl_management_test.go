@@ -16,37 +16,37 @@ func TestACLPermissionSet_String(t *testing.T) {
 		{
 			name: "Execute",
 			s:    ACLPermissionSet(Execute),
-			want: "--X",
+			want: "--x",
 		},
 		{
 			name: "Write",
 			s:    ACLPermissionSet(Write),
-			want: "-W-",
+			want: "-w-",
 		},
 		{
 			name: "Read",
 			s:    ACLPermissionSet(Read),
-			want: "R--",
+			want: "r--",
 		},
 		{
 			name: "Execute and Write",
 			s:    ACLPermissionSet(Execute).Add(Write),
-			want: "-WX",
+			want: "-wx",
 		},
 		{
 			name: "Execute and Read",
 			s:    ACLPermissionSet(Execute).Add(Read),
-			want: "R-X",
+			want: "r-x",
 		},
 		{
 			name: "Write and Read",
 			s:    ACLPermissionSet(Write).Add(Read),
-			want: "RW-",
+			want: "rw-",
 		},
 		{
 			name: "Execute and Write and Read",
 			s:    ACLPermissionSet(Execute).Add(Write).Add(Read),
-			want: "RWX",
+			want: "rwx",
 		},
 	}
 	for _, tt := range tests {

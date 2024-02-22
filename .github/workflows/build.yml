@@ -35,14 +35,8 @@ jobs:
         with:
           version: v1.56.1
 
-      #- name: Test
-      #  run: make test
-      #  env:
-      #    SF_ACCOUNT: ${{ secrets.sf_account }}
-      #    SF_USER: ${{ secrets.sf_user }}
-      #    SF_PASSWORD: ${{ secrets.sf_password }}
-      #    SF_ROLE: ${{ secrets.sf_role }}
-      #    SF_STANDARD_EDITION: true
+      - name: Test
+        run: make test
 
       - uses: codecov/codecov-action@v3
         with:

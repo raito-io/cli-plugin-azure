@@ -20,7 +20,7 @@ require (
 	github.com/raito-io/enumer v0.1.4
 	github.com/raito-io/golang-set v0.0.4
 	github.com/stretchr/testify v1.9.0
-	github.com/vektra/mockery/v2 v2.42.2
+	github.com/vektra/mockery/v2 v2.42.3
 )
 
 require (

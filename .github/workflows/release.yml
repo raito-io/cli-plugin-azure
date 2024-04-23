@@ -29,7 +29,7 @@ jobs:
         run: git config --global url."https://${{secrets.CI_SECRETS_TOKEN_USER}}:${{secrets.CI_SECRETS_TOKEN}}@github.com".insteadOf "https://github.com"
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest

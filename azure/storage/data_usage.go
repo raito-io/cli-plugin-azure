@@ -7,12 +7,11 @@ import (
 	"time"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
-	"github.com/raito-io/cli-plugin-azure/azure/monitor"
-	"github.com/raito-io/cli-plugin-azure/global"
-	"github.com/raito-io/cli/base/access_provider/sync_from_target"
-	"github.com/raito-io/cli/base/data_source"
 	"github.com/raito-io/cli/base/data_usage"
 	"github.com/raito-io/cli/base/util/config"
+
+	"github.com/raito-io/cli-plugin-azure/azure/monitor"
+	"github.com/raito-io/cli-plugin-azure/global"
 )
 
 type DataUsageSyncer struct {
@@ -45,8 +44,8 @@ func (s *DataUsageSyncer) SyncDataUsage(ctx context.Context, startDate time.Time
 			}
 
 			for _, rt := range entries {
-				accessedResource := sync_from_target.WhatItem{
-					DataObject: &data_source.DataObjectReference{
+				accessedResource := data_usage.UsageDataObjectItem{
+					DataObject: data_usage.UsageDataObjectReference{
 						FullName: fmt.Sprintf("%s/%s/%s/%s", configParams.GetString(global.AzSubscriptionId), resourceGroup, storageAccount, strings.Join(strings.Split(rt.ObjectKey, "/")[2:], "/")),
 						Type:     "file",
 					},
@@ -64,7 +63,7 @@ func (s *DataUsageSyncer) SyncDataUsage(ctx context.Context, startDate time.Time
 					User:                global.GetPrincipalNameById(ctx, configParams.Parameters, armauthorization.PrincipalTypeUser, rt.RequesterObjectId),
 					StartTime:           timeGenerated.Unix(),
 					EndTime:             timeGenerated.Unix(),
-					AccessedDataObjects: []sync_from_target.WhatItem{accessedResource},
+					AccessedDataObjects: []data_usage.UsageDataObjectItem{accessedResource},
 					Success:             true,
 				})
 

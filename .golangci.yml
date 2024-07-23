@@ -24,7 +24,8 @@ linters-settings:
       - paramTypeCombine
 
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
 
   revive:
     rules:
@@ -36,29 +37,49 @@ linters-settings:
     allow-cuddle-declarations: true # should be false
 
   nolintlint:
-    allow-no-explanation: [ ]
+    allow-no-explanation: []
     require-explanation: false
     require-specific: false
 
   gosec:
     excludes:
       - G404 # To be checked: Insecure random number source (rand)
-      - G602
 
   stylecheck:
-    checks: [ "all", "-ST1003"] # ST1003: No underscores in package names should be fixed and removed?
+    checks: ["all", "-ST1003"] # ST1003: No underscores in package names should be fixed and removed?
 
   predeclared:
     ignore: "error"
 
   gomnd:
     ignored-functions:
-      - 'math.*' # Magic number generation, should be fixed and removed?
+      - "math.*" # Magic number generation, should be fixed and removed?
 
   cyclop:
     max-complexity: 20
     skip-tests: true
     package-average: 0.0
+
+  errorlint:
+    errorf: true
+    errorf-multi: true
+    asserts: true
+    comparison: true
+
+  exhaustive:
+    default-signifies-exhaustive: true
+
+  wrapcheck:
+    ignoreSigs:
+      - .Errorf(
+      - errors.New(
+      - errors.Unwrap(
+      - .Wrap(
+      - .Wrapf(
+      - .WithMessage(
+      - .WithMessagef(
+      - .WithStack(
+      - go-multierror.Append(
 
 linters:
   disable-all: true
@@ -72,6 +93,7 @@ linters:
     - dupword
     - durationcheck
     - errcheck
+    - errorlint
     - exportloopref
     - exhaustive
     - forbidigo
@@ -86,6 +108,7 @@ linters:
     - govet
     - ineffassign
     - misspell
+    - nilerr
     - nolintlint
     - nakedret
     - prealloc
@@ -100,7 +123,6 @@ linters:
     - unparam
     - unused
     - whitespace
-    # - wrapcheck # 3th party errors should be wrapped to not lose context
     - wsl
 
 run:
@@ -110,7 +132,6 @@ run:
 output:
   path-prefix: ""
   sort-results: true
-  format: tab
   print-issued-lines: false
   print-linter-name: true
   uniq-by-line: false

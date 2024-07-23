@@ -1,4 +1,6 @@
 # Make sure to check the documentation at https://goreleaser.com
+version: 2
+
 project_name: cli-plugin-azure
 before:
   hooks:
@@ -12,16 +14,15 @@ builds:
     ldflags:
       - -X main.version={{.Version}}
 checksum:
-  name_template: 'checksums.txt'
+  name_template: "checksums.txt"
 changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - "^docs:"
+      - "^test:"
 archives:
-  -
-    format: 'tar.gz'
-    name_template: '{{ .ProjectName }}-{{ .Version }}-{{ .Os }}_{{ .Arch }}'
+  - format: "tar.gz"
+    name_template: "{{ .ProjectName }}-{{ .Version }}-{{ .Os }}_{{ .Arch }}"
 release:
   prerelease: auto

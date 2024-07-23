@@ -2,7 +2,7 @@ name: Raito CLI - Azure Plugin - Build
 on:
   push:
     branches:
-      - 'main'
+      - "main"
   pull_request:
 
 env:
@@ -18,7 +18,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: "1.22"
           cache: true
 
       - name: Configure git for private modules
@@ -33,7 +33,7 @@ jobs:
       - name: Lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: v1.56.1
+          version: v1.59.1
 
       - name: Test
         run: make test

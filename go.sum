@@ -145,8 +145,8 @@ github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 h1:Jamvg5psRI
 github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/raito-io/bexpression v0.1.2 h1:DHBTG2kNGSfwM3BwH97WP1vFjB2N8Ub41RRNUDWztVA=
 github.com/raito-io/bexpression v0.1.2/go.mod h1:z0in8o1zo5cPNeCUa3Mh5ZP7h6v/LX0JH5/NbV3VtzI=
-github.com/raito-io/cli v0.66.0 h1:TfbW2DFrmXgCSb+/4rSCUqQqUHbsoPvD2QZaB5k9fPo=
-github.com/raito-io/cli v0.66.0/go.mod h1:tQfmrUk1Mhk2cUCdvtVET78tY6qlv1v8Ubh/2cgBAF4=
+github.com/raito-io/cli v0.66.1 h1:hEAHQBWFRDnYHGPYvTClIZ0nAds7h3ee7fIY7h/vgNQ=
+github.com/raito-io/cli v0.66.1/go.mod h1:/m0gXYzzgxgNJOZi8UuKtrXo2FJq/ggEO1OHqxzyNOY=
 github.com/raito-io/cli-plugin-azure-ad v0.4.3 h1:F0pZxPN/u20j/yYrGFpXuU/FB+/MgpVMErCK92coHaY=
 github.com/raito-io/cli-plugin-azure-ad v0.4.3/go.mod h1:f1M/EWdBEhXpUrlrFvWaAPSJq0V83NYBqzH1supQ+Uo=
 github.com/raito-io/enumer v0.1.4 h1:r2QqGMjfKwn+yMHo4ybOAWvYON4pLBy+ucVP5niyHK4=

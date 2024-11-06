@@ -51,7 +51,11 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(_ context.Context, rait
 		doType := ""
 		doFullname := ""
 
-		if len(scopeSplit) == 3 {
+		if len(scopeSplit) < 3 {
+			logger.Error(fmt.Sprintf("Scope %q is not in the expected format: %+v. Will ignore the assignment", assignment.Scope, assignment))
+
+			continue
+		} else if len(scopeSplit) == 3 {
 			apName = fmt.Sprintf("subscription-%s", strings.ReplaceAll(assignment.RoleName, " ", "-"))
 			doType = "subscription"
 			doFullname = configMap.GetStringWithDefault(global.AzSubscriptionId, "")

@@ -61,6 +61,13 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(_ context.Context, rait
 			doFullname = configMap.GetStringWithDefault(global.AzSubscriptionId, "")
 		} else {
 			doType = strings.ToLower(scopeSplit[len(scopeSplit)-2])
+
+			if doType == "" {
+				logger.Error(fmt.Sprintf("Could not determine data object type for scope %q: %+v. Will ignore the assignment", assignment.Scope, assignment))
+
+				continue
+			}
+
 			doType = doType[0 : len(doType)-1]
 
 			doFullname = strings.Join(scopeSplit[2:], "/")

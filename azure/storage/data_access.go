@@ -51,12 +51,23 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(_ context.Context, rait
 		doType := ""
 		doFullname := ""
 
-		if len(scopeSplit) == 3 {
+		if len(scopeSplit) < 3 {
+			logger.Error(fmt.Sprintf("Scope %q is not in the expected format: %+v. Will ignore the assignment", assignment.Scope, assignment))
+
+			continue
+		} else if len(scopeSplit) == 3 {
 			apName = fmt.Sprintf("subscription-%s", strings.ReplaceAll(assignment.RoleName, " ", "-"))
 			doType = "subscription"
 			doFullname = configMap.GetStringWithDefault(global.AzSubscriptionId, "")
 		} else {
 			doType = strings.ToLower(scopeSplit[len(scopeSplit)-2])
+
+			if doType == "" {
+				logger.Error(fmt.Sprintf("Could not determine data object type for scope %q: %+v. Will ignore the assignment", assignment.Scope, assignment))
+
+				continue
+			}
+
 			doType = doType[0 : len(doType)-1]
 
 			doFullname = strings.Join(scopeSplit[2:], "/")

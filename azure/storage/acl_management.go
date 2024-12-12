@@ -21,23 +21,23 @@ func NewACLPermissionSet(permissions ...ACLPermission) ACLPermissionSet {
 }
 
 func (s ACLPermissionSet) Add(permission ACLPermission) ACLPermissionSet {
-	return ACLPermissionSet(int8(s) | int8(permission))
+	return ACLPermissionSet(int8(s) | int8(permission)) //nolint:gosec
 }
 
 func (s ACLPermissionSet) Remove(permission ACLPermission) ACLPermissionSet {
-	return ACLPermissionSet(int8(s) & ^int8(permission))
+	return ACLPermissionSet(int8(s) & ^int8(permission)) //nolint:gosec
 }
 
 func (s ACLPermissionSet) Or(set ACLPermissionSet) ACLPermissionSet {
-	return ACLPermissionSet(int8(s) | int8(set))
+	return ACLPermissionSet(int8(s) | int8(set)) //nolint:gosec
 }
 
 func (s ACLPermissionSet) And(set ACLPermissionSet) ACLPermissionSet {
-	return ACLPermissionSet(int8(s) & int8(set))
+	return ACLPermissionSet(int8(s) & int8(set)) //nolint:gosec
 }
 
 func (s ACLPermissionSet) Contains(permission ACLPermission) bool {
-	return int8(s)&int8(permission) == int8(permission)
+	return int8(s)&int8(permission) == int8(permission) //nolint:gosec
 }
 
 func (s ACLPermissionSet) String() string {

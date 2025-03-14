@@ -9,6 +9,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/resourcemanager/authorization/armauthorization/v2"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azdatalake/directory"
 	"github.com/aws/smithy-go/ptr"
+	"github.com/raito-io/cli/base/access_provider/types"
 	"github.com/raito-io/cli/base/data_source"
 	"github.com/raito-io/cli/base/wrappers"
 	"github.com/raito-io/golang-set/set"
@@ -91,7 +92,7 @@ func (a *DataAccessSyncer) SyncAccessProvidersFromTarget(_ context.Context, rait
 				Name:       apName,
 				NamingHint: apName,
 				ActualName: apName,
-				Action:     sync_from_target.Grant,
+				Action:     types.Grant,
 				Type:       ptr.String(constants.RoleAssignments),
 				Who: &sync_from_target.WhoItem{
 					Users:  []string{},
